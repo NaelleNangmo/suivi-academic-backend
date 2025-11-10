@@ -57,3 +57,11 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+
+## Notions a retenir
+
+-**php artisan make:migration create_filiere_table** est la commande pour creer une migration qui par la meme occasion creer la table fillier
+-**php artisan migrate:rollback** commande pour annuler la derniere migration
+-**hp artisan migrate:rollback --path=/database/migrations/2025_11_10_151118_create_niveau_table.php** pour indexer la migration a suprim

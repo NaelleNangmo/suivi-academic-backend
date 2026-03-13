@@ -1,0 +1,100 @@
+# Nom du pipeline visible dans l’interface GitHub
+name: Laravel CI Pipeline
+
+# Déclenchement automatique du pipeline
+on:
+  push:                     # exécution à chaque push
+    branches:
+      - main
+      - develop
+  pull_request:             # vérification aussi lors des pull request
+
+jobs:
+
+  build-test:               # nom du job principal
+    runs-on: ubuntu-latest  # machine virtuelle utilisée pour l'exécution
+
+    steps:
+
+      # -------------------------------------------------------
+      # 1. Récupérer le code du dépôt Git
+      # -------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------------
+      # 2. Installer PHP avec les extensions nécessaires
+      # -------------------------------------------------------
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, pdo, pdo_mysql, bcmath
+          coverage: none
+
+      # -------------------------------------------------------
+      # 3. Installer Composer (gestionnaire de dépendances PHP)
+      # -------------------------------------------------------
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      # -------------------------------------------------------
+      # 4. Préparer l'environnement Laravel
+      # création du fichier .env et génération de la clé
+      # -------------------------------------------------------
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # -------------------------------------------------------
+      # 5. Compilation / optimisation Laravel
+      # Cela simule le build production
+      # -------------------------------------------------------
+      - name: Build application
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+      # -------------------------------------------------------
+      # 6. Lancer les migrations sur une base SQLite
+      # utilisée uniquement pour les tests
+      # -------------------------------------------------------
+      - name: Run migrations
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+
+      # -------------------------------------------------------
+      # 7. Exécuter les tests automatisés
+      # avec PHPUnit intégré à Laravel
+      # -------------------------------------------------------
+      - name: Run tests
+        run: php artisan test
+
+      # -------------------------------------------------------
+      # 8. Analyse statique du code
+      # permet de détecter les erreurs potentielles
+      # -------------------------------------------------------
+      - name: Static code analysis
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G
+
+      # -------------------------------------------------------
+      # 9. Création d’un artefact CI
+      # archive du projet compilé pour un futur déploiement
+      # -------------------------------------------------------
+      - name: Create build artifact
+        run: |
+          zip -r laravel-build.zip . \
+          -x "vendor/**" ".git/**" "node_modules/**"
+
+      # -------------------------------------------------------
+      # 10. Upload de l’artefact dans GitHub
+      # il pourra être téléchargé depuis le pipeline
+      # -------------------------------------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-build
+          path: laravel-build.zip

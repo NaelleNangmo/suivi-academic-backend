@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('filiere', function (Blueprint $table) {
-            $table->string('code_filiere', 20)->primary();
-            $table->string('label_filiere', 100);
-            $table->text('desc_filiere', 256)->nullable();
-            $table->timestamps();
+        Schema::table('personal_access_tokens', function (Blueprint $table) {
+            //
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('filiere');
+        Schema::table('personal_access_tokens', function (Blueprint $table) {
+            //
+        });
     }
 };

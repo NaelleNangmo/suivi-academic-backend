@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sale', function (Blueprint $table) {
-            $table->string('num_sale')->primary();
-            $table->integer('contenance_sale');
-            $table->string('statut_sale', 100);
+        Schema::create('filiere', function (Blueprint $table) {
+            $table->string("code_filiere",20)->primary();
+            $table->string("label_filiere", 256);
+            $table->text("desc_filiere");
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sale');
+        Schema::dropIfExists('filiere');
     }
 };

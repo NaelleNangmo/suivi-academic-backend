@@ -12,13 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ec', function (Blueprint $table) {
-            $table->string('code_ec', 20)->primary();
-            $table->string('label_ec', 100);
-            $table->text('desc_ec', 256)->nullable();
-            $table->integer('nbh_ec');
-            $table->integer('nbc_ec');
-            $table->string('code_ue', 20);
-            $table->foreign('code_ue')->references('code_ue')->on('ue')->onDelete('cascade');
+            $table->string("code_ec",20)->primary();
+            $table->string("label_ec");
+            $table->text("desc_ec");
+            $table->integer("nbh_ec");
+            $table->integer("nbc_ec");
+            $table->string("support_cours")->nullable();
+            $table->string("code_ue", 20);
+            $table->foreign("code_ue")->references("code_ue")->on("ue");
             $table->timestamps();
         });
     }

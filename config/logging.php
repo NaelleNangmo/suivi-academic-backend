@@ -127,6 +127,15 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'daily_trace' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/trace/app-trace.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 30),
+            'replace_placeholders' => true,
+            'tap' => [App\Logging\CustomizeFormatter::class],
+        ],
+
     ],
 
 ];

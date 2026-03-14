@@ -78,7 +78,7 @@ jobs:
       # permet de détecter les erreurs potentielles
       # -------------------------------------------------------
       - name: Static code analysis
-        run: ./vendor/bin/phpstan analyse --memory-limit=2G
+        run: ./vendor/bin/phpstan analyse app routes config --memory-limit=2G
 
       # -------------------------------------------------------
       # 9. Création d’un artefact CI

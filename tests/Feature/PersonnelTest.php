@@ -35,7 +35,7 @@ class PersonnelTest extends TestCase
             'prenom_pers' => 'Personnel',
             'sexe_pers' => 'M',
             'phone_pers' => '0123456789',
-            'login_pers' => 'test999',
+            'login_pers' => 'test999@test.com',
             'pwd_pers' => 'password123',
             'type_pers' => 'ENSEIGNANT'
         ]);
@@ -56,7 +56,7 @@ class PersonnelTest extends TestCase
             'prenom_pers' => 'Personnel',
             'sexe_pers' => 'F',
             'phone_pers' => '0123456789',
-            'login_pers' => 'test998',
+            'login_pers' => 'test998@test.com',
             'pwd_pers' => 'password123',
             'type_pers' => 'ENSEIGNANT'
         ]);
@@ -84,7 +84,7 @@ class PersonnelTest extends TestCase
             'prenom_pers' => 'Personnel',
             'sexe_pers' => 'M',
             'phone_pers' => '0123456789',
-            'login_pers' => 'test997',
+            'login_pers' => 'test997@test.com',
             'pwd_pers' => 'password123',
             'type_pers' => 'ENSEIGNANT'
         ]);

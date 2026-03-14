@@ -45,7 +45,7 @@ class ProgrammationFactory extends Factory
             'num_salle'  => $num_salle,
             'code_pers'  => $code_pers,
             'date'       => $start->format('Y-m-d'),
-            'date-debut' => $start->format('Y-m-d H:i:s'), // ou renommer date_debut dans ta migration
+            'date_debut' => $start->format('Y-m-d H:i:s'),
             'date_fin'   => $end->format('Y-m-d H:i:s'),
             'nbre_heure' => $start->diff($end)->h,
             'statut'     => $this->faker->randomElement(['EN COURS', 'EN ATTENTE', 'ACHEVER']),

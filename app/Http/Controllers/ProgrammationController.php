@@ -37,7 +37,7 @@ class ProgrammationController extends Controller
             'num_salle' => 'required|string|exists:salle,num_salle',
             'code_pers' => 'required|string|max:20|exists:personnel,code_pers',
             'date' => 'required|date',
-            'date-debut' => 'required|date',
+            'date_debut' => 'required|date',
             'date_fin' => 'required|date|after:date_debut',
             'nbre_heure' => 'required|integer|min:1',
             'statut' => 'required|in:EN COURS,EN ATTENTE,ACHEVER'
@@ -144,7 +144,7 @@ class ProgrammationController extends Controller
 
         $validator = Validator::make($request->all(), [
             'date' => 'sometimes|required|date',
-            'date-debut' => 'sometimes|required|date',
+            'date_debut' => 'sometimes|required|date',
             'date_fin' => 'sometimes|required|date',
             'nbre_heure' => 'sometimes|required|integer|min:1',
             'statut' => 'sometimes|required|in:EN COURS,EN ATTENTE,ACHEVER'

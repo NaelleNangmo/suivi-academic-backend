@@ -18,7 +18,7 @@ class Programmation extends Model
 
 	protected $casts = [
 		'date' => 'datetime',
-		'date-debut' => 'datetime',
+		'date_debut' => 'datetime',
 		'date_fin' => 'datetime',
 		'nbre_heure' => 'int'
 	];
@@ -28,7 +28,7 @@ class Programmation extends Model
 		'num_salle',
 		'code_pers',
 		'date',
-		'date-debut',
+		'date_debut',
 		'date_fin',
 		'nbre_heure',
 		'statut'

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreign("num_salle")->references("num_salle")->on("salle");
             $table->foreign("code_pers")->references("code_pers")->on("personnel");
             $table->date("date");
-            $table->dateTime("date-debut");
+            $table->dateTime("date_debut");
             $table->dateTime("date_fin");
             $table->integer("nbre_heure");
             $table->enum("statut", ["EN COURS", "EN ATTENTE", "ACHEVER"]);

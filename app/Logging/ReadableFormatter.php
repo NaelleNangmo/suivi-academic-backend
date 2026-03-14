@@ -3,18 +3,19 @@
 namespace App\Logging;
 
 use Monolog\Formatter\FormatterInterface;
+use Monolog\LogRecord;
 
 class ReadableFormatter implements FormatterInterface
 {
     /**
      * Formate un log de manière lisible et structurée
      */
-    public function format(array $record): string
+    public function format(LogRecord $record): string
     {
-        $timestamp = $record['datetime']->format('Y-m-d H:i:s');
-        $level = strtoupper($record['level_name']);
-        $message = $record['message'];
-        $context = $record['context'] ?? [];
+        $timestamp = $record->datetime->format('Y-m-d H:i:s');
+        $level = strtoupper($record->level->name);
+        $message = $record->message;
+        $context = $record->context ?? [];
 
         // Format de base avec timestamp et niveau
         $output = "\n" . str_repeat('=', 100) . "\n";
@@ -86,9 +87,6 @@ class ReadableFormatter implements FormatterInterface
         return $output;
     }
 
-    /**
-     * Formate un batch de logs
-     */
     public function formatBatch(array $records): string
     {
         $output = '';

@@ -46,7 +46,7 @@ class ProgrammationTest extends TestCase
             'num_salle' => $salle->num_salle,
             'code_pers' => $personnel2->code_pers,
             'date' => '2024-01-15',
-            'date-debut' => '2024-01-15 08:00:00',
+            'date_debut' => '2024-01-15 08:00:00',
             'date_fin' => '2024-01-15 10:00:00',
             'nbre_heure' => 2,
             'statut' => 'EN ATTENTE'
@@ -74,7 +74,7 @@ class ProgrammationTest extends TestCase
             'num_salle' => $salle->num_salle,
             'code_pers' => $personnel2->code_pers,
             'date' => '2024-01-16',
-            'date-debut' => '2024-01-16 08:00:00',
+            'date_debut' => '2024-01-16 08:00:00',
             'date_fin' => '2024-01-16 10:00:00',
             'nbre_heure' => 2,
             'statut' => 'EN ATTENTE'
@@ -105,7 +105,7 @@ class ProgrammationTest extends TestCase
             'num_salle' => $salle->num_salle,
             'code_pers' => $personnel2->code_pers,
             'date' => '2024-01-17',
-            'date-debut' => '2024-01-17 08:00:00',
+            'date_debut' => '2024-01-17 08:00:00',
             'date_fin' => '2024-01-17 10:00:00',
             'nbre_heure' => 2,
             'statut' => 'EN ATTENTE'
@@ -139,7 +139,7 @@ class ProgrammationTest extends TestCase
             'num_salle' => $salle->num_salle,
             'code_pers' => $personnel2->code_pers,
             'date' => '2024-01-18',
-            'date-debut' => '2024-01-18 08:00:00',
+            'date_debut' => '2024-01-18 08:00:00',
             'date_fin' => '2024-01-18 10:00:00',
             'nbre_heure' => 2,
             'statut' => 'EN ATTENTE'

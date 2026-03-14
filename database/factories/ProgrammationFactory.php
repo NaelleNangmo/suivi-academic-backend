@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Ec;
 use App\Models\Salle;
 use App\Models\Personnel;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Programmation>
@@ -29,7 +30,7 @@ class ProgrammationFactory extends Factory
         $end   = (clone $start)->modify('+'.rand(1, 3).' hours');
 
         // Boucle pour éviter doublons sur la clé composite
-        while (\DB::table('programmation')
+        while (DB::table('programmation')
             ->where('code_ec', $code_ec)
             ->where('num_salle', $num_salle)
             ->where('code_pers', $code_pers)

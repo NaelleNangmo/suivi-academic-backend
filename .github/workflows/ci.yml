@@ -1,98 +1,97 @@
-# Nom du pipeline visible dans l’interface GitHub
 name: Laravel CI Pipeline
 
-# Déclenchement automatique du pipeline
+#  Quand est-ce que le pipeline se lance ?
 on:
-  push:                     # exécution à chaque push
+  push:
     branches:
       - main
       - develop
-  pull_request:             # vérification aussi lors des pull request
+  pull_request:
 
 jobs:
-
-  build-test:               # nom du job principal
-    runs-on: ubuntu-latest  # machine virtuelle utilisée pour l'exécution
+  build-test:
+    runs-on: ubuntu-latest   # Machine virtuelle Linux utilisée pour exécuter le pipeline
 
     steps:
 
-      # -------------------------------------------------------
-      # 1. Récupérer le code du dépôt Git
-      # -------------------------------------------------------
+      #  Étape 1 : Récupérer le code source
+      # Sans ça, le pipeline ne peut rien faire
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -------------------------------------------------------
-      # 2. Installer PHP avec les extensions nécessaires
-      # -------------------------------------------------------
+      #  Étape 2 : Vérifier si les dépendances ont des failles connues
+      # Exemple : une librairie vulnérable peut exposer ton application
+      - name: Security audit (Composer)
+        run: composer audit || exit 1
+        #  Si une faille critique est trouvée → le pipeline s’arrête immédiatement
+
+      # 🔹 Étape 3 : Installer PHP
+      # On prépare l’environnement nécessaire pour exécuter Laravel
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
           extensions: mbstring, pdo, pdo_mysql, bcmath
-          coverage: none
 
-      # -------------------------------------------------------
-      # 3. Installer Composer (gestionnaire de dépendances PHP)
-      # -------------------------------------------------------
+      #  Étape 4 : Installer les dépendances de manière sécurisée
+      # --no-scripts empêche l’exécution de scripts potentiellement dangereux
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
-      # -------------------------------------------------------
-      # 4. Préparer l'environnement Laravel
-      # création du fichier .env et génération de la clé
-      # -------------------------------------------------------
+      #  Étape 5 : Préparer Laravel
+      # On crée un environnement local de test
       - name: Prepare environment
         run: |
-          cp .env.example .env
-          php artisan key:generate
+          cp .env.example .env   # crée un fichier de configuration
+          php artisan key:generate   # génère une clé secrète pour l’application
 
-      # -------------------------------------------------------
-      # 5. Compilation / optimisation Laravel
-      # Cela simule le build production
-      # -------------------------------------------------------
+      #  Étape 6 : Scanner le code pour détecter des secrets exposés
+      # Exemple : mot de passe, clé API, token GitHub
+      - name: Scan for secrets
+        uses: zricethezav/gitleaks-action@v2
+        #  Empêche d’envoyer des informations sensibles dans le dépôt
+
+      #  Étape 7 : Build de l’application
+      # On optimise Laravel comme en production
       - name: Build application
         run: |
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
 
-      # -------------------------------------------------------
-      # 6. Lancer les migrations sur une base SQLite
-      # utilisée uniquement pour les tests
-      # -------------------------------------------------------
+      #  Étape 8 : Préparer une base de données de test
+      # SQLite est utilisée pour éviter de toucher une vraie base
       - name: Run migrations
         run: |
           touch database/database.sqlite
           php artisan migrate --force
 
-      # -------------------------------------------------------
-      # 7. Exécuter les tests automatisés
-      # avec PHPUnit intégré à Laravel
-      # -------------------------------------------------------
+      #  Étape 9 : Lancer les tests
+      # Vérifie que tout fonctionne correctement
       - name: Run tests
         run: php artisan test
+        #  Si un test échoue → pipeline échoue
 
-      # -------------------------------------------------------
-      # 8. Analyse statique du code
-      # permet de détecter les erreurs potentielles
-      # -------------------------------------------------------
+      #  Étape 10 : Analyse du code
+      # Détecte erreurs, mauvaises pratiques et failles potentielles
       - name: Static code analysis
         run: ./vendor/bin/phpstan analyse app config database --memory-limit=2G
 
-      # -------------------------------------------------------
-      # 9. Création d’un artefact CI
-      # archive du projet compilé pour un futur déploiement
-      # -------------------------------------------------------
+      #  Étape 11 : Vérification finale des vulnérabilités
+      # Double sécurité sur les dépendances
+      - name: Dependency vulnerability scan
+        run: composer audit
+
+      #  Étape 12 : Création d’un fichier prêt pour déploiement
+      # On exclut les fichiers sensibles
       - name: Create build artifact
         run: |
           zip -r laravel-build.zip . \
-          -x "vendor/**" ".git/**" "node_modules/**"
+          -x "vendor/**" ".git/**" "node_modules/**" ".env"
+          #  Très important : on ne doit JAMAIS inclure .env
 
-      # -------------------------------------------------------
-      # 10. Upload de l’artefact dans GitHub
-      # il pourra être téléchargé depuis le pipeline
-      # -------------------------------------------------------
+      #  Étape 13 : Sauvegarder le build
+      # Permet de le télécharger ou l’utiliser plus tard pour déployer
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

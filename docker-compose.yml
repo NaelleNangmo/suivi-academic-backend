@@ -7,9 +7,16 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      - mysql
+      - postgres
     networks:
       - laravel
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: suivi_academic
+      DB_USERNAME: postgres
+      DB_PASSWORD: noutong1
 
   nginx:
     image: nginx:latest
@@ -24,22 +31,23 @@ services:
     networks:
       - laravel
 
-  mysql:
-    image: mysql:8.0
-    container_name: laravel_mysql
+  postgres:
+    image: postgres:15
+    container_name: laravel_postgres
     restart: always
     environment:
-      MYSQL_DATABASE: suivi_academique_backend_2
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: suivi_academic
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: noutong1
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - dbdata:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
     networks:
       - laravel
 
 volumes:
-  dbdata:
+  pgdata:
 
 networks:
   laravel:

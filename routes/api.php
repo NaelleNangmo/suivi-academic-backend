@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 // AUTH PUBLIC
 // ----------------------------------------------------
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/metrics', function () {
+    return app('prometheus')->render();
+});
 
 // ----------------------------------------------------
 // ROUTES PROTÉGÉES PAR SANCTUM
@@ -23,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- Utilisateur actuellement connecté ---
     Route::get('/me', function () {
-        return response()->json(auth()->user(), 200);
+        return response()->json(\Illuminate\Support\Facades\Auth::user(), 200);
     });
 
     // --- Logout ---

@@ -1,6 +1,8 @@
 version: "3.9"
 
 services:
+
+  # Application Laravel (PHP-FPM)
   app:
     build: .
     container_name: laravel_app
@@ -18,11 +20,12 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: noutong1
 
+  # Serveur web Nginx (expose Laravel)
   nginx:
     image: nginx:latest
     container_name: laravel_nginx
     ports:
-      - "8000:80"
+      - "8000:80"   # accès via navigateur
     volumes:
       - .:/var/www
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -31,6 +34,7 @@ services:
     networks:
       - laravel
 
+  # Base de données PostgreSQL
   postgres:
     image: postgres:15
     container_name: laravel_postgres
@@ -46,8 +50,93 @@ services:
     networks:
       - laravel
 
+  # Prometheus collecte les métriques
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus   # stockage des métriques
+    ports:
+      - "9090:9090"
+    networks:
+      - laravel
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # Grafana pour les dashboards
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana   # sauvegarde dashboards
+    networks:
+      - laravel
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  # Node exporter pour CPU / RAM / réseau
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - laravel
+
+  # Elasticsearch pour stocker les logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    networks:
+      - laravel
+
+  # Logstash lit les logs Laravel
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.5.0
+    container_name: logstash
+    volumes:
+      - ./logging/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - .:/var/www   # accès aux logs Laravel
+    depends_on:
+      - elasticsearch
+    networks:
+      - laravel
+
+  # Kibana visualise les logs
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - laravel
+
+  # Alertmanager pour les alertes
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - laravel
+
+# Volumes persistants
 volumes:
   pgdata:
+  prometheus_data:
+  grafana_data:
 
+# Réseau interne
 networks:
   laravel:

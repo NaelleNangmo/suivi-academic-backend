@@ -1,6 +1,5 @@
 name: Laravel CI Pipeline
 
-#  Quand est-ce que le pipeline se lance ?
 on:
   push:
     branches:
@@ -10,88 +9,79 @@ on:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest   # Machine virtuelle Linux utilisée pour exécuter le pipeline
+    runs-on: ubuntu-latest
 
     steps:
 
-      #  Étape 1 : Récupérer le code source
-      # Sans ça, le pipeline ne peut rien faire
+      # 1. Récupération du code source
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      #  Étape 2 : Vérifier si les dépendances ont des failles connues
-      # Exemple : une librairie vulnérable peut exposer ton application
-      - name: Security audit (Composer)
-        run: composer audit || exit 1
-        #  Si une faille critique est trouvée → le pipeline s’arrête immédiatement
-
-      # 🔹 Étape 3 : Installer PHP
-      # On prépare l’environnement nécessaire pour exécuter Laravel
+      # 2. Installation PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
           extensions: mbstring, pdo, pdo_mysql, bcmath
 
-      #  Étape 4 : Installer les dépendances de manière sécurisée
-      # --no-scripts empêche l’exécution de scripts potentiellement dangereux
+      # 3. Installation dépendances
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
+        run: composer install --prefer-dist --no-progress --no-interaction
 
-      #  Étape 5 : Préparer Laravel
-      # On crée un environnement local de test
+      # 4. Audit sécurité dépendances
+      - name: Security audit (Composer)
+        run: composer audit
+
+      # 5. Préparation environnement Laravel
       - name: Prepare environment
         run: |
-          cp .env.example .env   # crée un fichier de configuration
-          php artisan key:generate   # génère une clé secrète pour l’application
+          cp .env.example .env
+          php artisan key:generate
 
-      #  Étape 6 : Scanner le code pour détecter des secrets exposés
-      # Exemple : mot de passe, clé API, token GitHub
+      # 6. Scan secrets
       - name: Scan for secrets
         uses: zricethezav/gitleaks-action@v2
-        #  Empêche d’envoyer des informations sensibles dans le dépôt
 
-      #  Étape 7 : Build de l’application
-      # On optimise Laravel comme en production
+      # 7. Cache optimisation Laravel
       - name: Build application
         run: |
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
 
-      #  Étape 8 : Préparer une base de données de test
-      # SQLite est utilisée pour éviter de toucher une vraie base
+      # 8. Base de données de test
       - name: Run migrations
         run: |
           touch database/database.sqlite
           php artisan migrate --force
 
-      #  Étape 9 : Lancer les tests
-      # Vérifie que tout fonctionne correctement
+      # 9. Tests
       - name: Run tests
         run: php artisan test
-        #  Si un test échoue → pipeline échoue
 
-      #  Étape 10 : Analyse du code
-      # Détecte erreurs, mauvaises pratiques et failles potentielles
+      # 10. Analyse statique
       - name: Static code analysis
         run: ./vendor/bin/phpstan analyse app config database --memory-limit=2G
 
-      #  Étape 11 : Vérification finale des vulnérabilités
-      # Double sécurité sur les dépendances
-      - name: Dependency vulnerability scan
-        run: composer audit
+      # 11. Build Docker image
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      #  Étape 12 : Création d’un fichier prêt pour déploiement
-      # On exclut les fichiers sensibles
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/suivi-academic-backend:latest .
+
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/suivi-academic-backend:latest
+
+      # 12. Artifact (backup optionnel)
       - name: Create build artifact
         run: |
           zip -r laravel-build.zip . \
           -x "vendor/**" ".git/**" "node_modules/**" ".env"
-          #  Très important : on ne doit JAMAIS inclure .env
 
-      #  Étape 13 : Sauvegarder le build
-      # Permet de le télécharger ou l’utiliser plus tard pour déployer
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

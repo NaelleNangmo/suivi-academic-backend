@@ -38,6 +38,7 @@ class AuthController extends Controller
                 'user_agent' => $userAgent,
                 'action_description' => 'Échec de connexion - Utilisateur non trouvé'
             ], 'warning');
+            $this->prometheusAuthCount('failure');
             return response()->json(['message' => 'Identifiants incorrects'], 401);
         }
 
@@ -50,6 +51,7 @@ class AuthController extends Controller
                 'user_agent' => $userAgent,
                 'action_description' => 'Échec de connexion - Mot de passe incorrect'
             ], 'warning');
+            $this->prometheusAuthCount('failure');
             return response()->json(['message' => 'Identifiants incorrects'], 401);
         }
 
@@ -93,6 +95,7 @@ class AuthController extends Controller
                 'action_description' => 'Connexion réussie'
             ]);
 
+            $this->prometheusAuthCount('success');
             return response()->json([
                 'personnel'    => $personnel,
                 'access_token' => $token,
@@ -161,5 +164,16 @@ class AuthController extends Controller
         ], 'warning');
 
         return response()->json(['message' => 'Aucun token à supprimer'], 200);
+    }
+
+    private function prometheusAuthCount(string $status): void
+    {
+        try {
+            $counts = \Illuminate\Support\Facades\Cache::get('prom_auth_attempts_total', []);
+            $counts[$status] = ($counts[$status] ?? 0) + 1;
+            \Illuminate\Support\Facades\Cache::put('prom_auth_attempts_total', $counts, now()->addDay());
+        } catch (\Throwable) {
+            // silencieux
+        }
     }
 }

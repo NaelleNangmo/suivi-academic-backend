@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(\App\Http\Middleware\LogAllRequests::class);
+        $middleware->append(\App\Http\Middleware\PrometheusMetrics::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

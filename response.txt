@@ -1,0 +1,24 @@
+# HELP laravel_db_filieres_total Total filieres in DB
+# TYPE laravel_db_filieres_total gauge
+laravel_db_filieres_total 215
+# HELP laravel_db_niveaux_total Total niveaux in DB
+# TYPE laravel_db_niveaux_total gauge
+laravel_db_niveaux_total 500
+# HELP laravel_db_ues_total Total UEs in DB
+# TYPE laravel_db_ues_total gauge
+laravel_db_ues_total 500
+# HELP laravel_db_ecs_total Total ECs in DB
+# TYPE laravel_db_ecs_total gauge
+laravel_db_ecs_total 800
+# HELP laravel_db_personnels_total Total personnels in DB
+# TYPE laravel_db_personnels_total gauge
+laravel_db_personnels_total 500
+# HELP laravel_db_salles_total Total salles in DB
+# TYPE laravel_db_salles_total gauge
+laravel_db_salles_total 1000
+# HELP laravel_db_programmations_total Total programmations in DB
+# TYPE laravel_db_programmations_total gauge
+laravel_db_programmations_total 0
+# HELP php_info PHP environment info
+# TYPE php_info gauge
+php_info{version="8.2.12"} 1

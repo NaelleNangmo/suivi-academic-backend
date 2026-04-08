@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Route;
 // AUTH PUBLIC
 // ----------------------------------------------------
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/metrics', function () {
-    return app('prometheus')->render();
-});
+Route::get('/metrics', \App\Http\Controllers\MetricsController::class);
 
 // ----------------------------------------------------
 // ROUTES PROTÉGÉES PAR SANCTUM

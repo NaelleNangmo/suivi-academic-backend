@@ -1,0 +1,39 @@
+groups:
+  - name: gestacad_alerts
+    rules:
+
+      - alert: HighErrorRate
+        expr: sum(rate(laravel_http_requests_total{status=~"5.."}[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs HTTP 5xx élevé"
+          description: "Plus de 0.5 req/s en erreur 5xx depuis 2 minutes."
+
+      - alert: SlowRequests
+        expr: histogram_quantile(0.95, sum(rate(laravel_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requêtes lentes (p95 > 2s)"
+          description: "Le 95e percentile de latence dépasse 2 secondes."
+
+      - alert: HighAuthFailures
+        expr: sum(rate(laravel_auth_attempts_total{status="failure"}[5m])) > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nombreux échecs d'authentification"
+          description: "Plus d'1 échec de connexion par seconde (possible brute-force)."
+
+      - alert: AppDown
+        expr: up{job="laravel"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application Laravel inaccessible"
+          description: "Le endpoint /api/metrics ne répond plus."

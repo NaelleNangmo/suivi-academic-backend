@@ -1,15 +1,29 @@
 global:
-  scrape_interval: 5s
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
 
 scrape_configs:
 
-  # métriques système
+  # Métriques Laravel (via nginx)
+  - job_name: "laravel"
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["nginx:80"]
+
+  # Métriques système (CPU, RAM, disque, réseau)
   - job_name: "node"
     static_configs:
       - targets: ["node-exporter:9100"]
 
-  # métriques Laravel
-  - job_name: "laravel"
-    metrics_path: /metrics
+  # Auto-monitoring Prometheus
+  - job_name: "prometheus"
     static_configs:
-      - targets: ["nginx:80"]   # on passe par nginx
+      - targets: ["localhost:9090"]

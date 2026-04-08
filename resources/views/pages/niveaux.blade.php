@@ -3,22 +3,41 @@
 @push('styles') @include('partials.crud-styles') @endpush
 
 @section('content')
-<meta name="csrf-token" content="{{ csrf_token() }}">
 
 <div class="page-header">
     <h1>📚 Niveaux</h1>
     <button class="btn btn-success" onclick="openModal('createModal')">+ Nouveau niveau</button>
 </div>
 
+@if(session('success'))<div class="alert alert-success">✓ {{ session('success') }}</div>@endif
+@if(session('error'))<div class="alert alert-error">⚠ {{ session('error') }}</div>@endif
+
 <div class="card">
-    <div class="card-header">
-        <span class="card-title">Liste des niveaux</span>
-        <button class="btn btn-secondary btn-sm" onclick="loadData()">↻ Actualiser</button>
-    </div>
+    <div class="card-header"><span class="card-title">Liste des niveaux ({{ $niveaux->count() }})</span></div>
     <div class="table-wrap">
         <table>
             <thead><tr><th>Code</th><th>Libellé</th><th>Filière</th><th>Description</th><th>Actions</th></tr></thead>
-            <tbody id="tbody"><tr><td colspan="5" class="empty"><div class="empty-icon">⏳</div>Chargement...</td></tr></tbody>
+            <tbody>
+            @forelse($niveaux as $n)
+                <tr>
+                    <td><span class="badge badge-blue">{{ $n->code_niveau }}</span></td>
+                    <td>{{ $n->label_niveau }}</td>
+                    <td><span class="badge badge-purple">{{ $n->code_filiere }}</span></td>
+                    <td class="text-muted">{{ Str::limit($n->desc_niveau, 50) }}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-primary btn-sm" onclick='openEdit(@json($n))'>Modifier</button>
+                            <form method="POST" action="/niveaux/{{ $n->code_niveau }}" onsubmit="return confirm('Supprimer ce niveau ?')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-danger btn-sm">Supprimer</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="empty"><div class="empty-icon">📚</div>Aucun niveau</td></tr>
+            @endforelse
+            </tbody>
         </table>
     </div>
 </div>
@@ -27,13 +46,14 @@
   <div class="modal">
     <div class="modal-head"><h2>Nouveau niveau</h2><button class="modal-close" onclick="closeModal('createModal')">×</button></div>
     <div class="modal-body">
-      <form id="createForm">
-        <div class="form-group"><label>Libellé *</label><input name="label_niveau" required placeholder="Ex: Licence 1"></div>
-        <div class="form-group"><label>Description *</label><textarea name="desc_niveau" rows="2" required placeholder="Description..."></textarea></div>
+      <form method="POST" action="/niveaux">
+        @csrf
+        <div class="form-group"><label>Libellé *</label><input name="label_niveau" required placeholder="Ex: Licence 1" value="{{ old('label_niveau') }}"></div>
+        <div class="form-group"><label>Description *</label><textarea name="desc_niveau" rows="2" required>{{ old('desc_niveau') }}</textarea></div>
         <div class="form-group"><label>Filière *</label>
           <select name="code_filiere" required>
             <option value="">-- Choisir --</option>
-            @foreach($filieres as $f)<option value="{{ $f->code_filiere }}">{{ $f->label_filiere }}</option>@endforeach
+            @foreach($filieres as $f)<option value="{{ $f->code_filiere }}" {{ old('code_filiere')==$f->code_filiere?'selected':'' }}>{{ $f->label_filiere }}</option>@endforeach
           </select>
         </div>
         <div class="modal-foot">
@@ -49,7 +69,8 @@
   <div class="modal">
     <div class="modal-head"><h2>Modifier le niveau</h2><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
     <div class="modal-body">
-      <form id="editForm">
+      <form id="editForm" method="POST">
+        @csrf @method('PUT')
         <div class="form-group"><label>Libellé *</label><input id="e_label" name="label_niveau" required></div>
         <div class="form-group"><label>Description *</label><textarea id="e_desc" name="desc_niveau" rows="2" required></textarea></div>
         <div class="form-group"><label>Filière *</label>
@@ -70,59 +91,13 @@
 @push('scripts')
 @include('partials.crud-scripts')
 <script>
-let currentId = null;
-
-function row(n) {
-    return `<tr>
-        <td><span class="badge badge-blue">${n.code_niveau}</span></td>
-        <td>${n.label_niveau}</td>
-        <td><span class="badge badge-purple">${n.code_filiere}</span></td>
-        <td class="text-muted">${(n.desc_niveau||'').substring(0,50)}${(n.desc_niveau||'').length>50?'…':''}</td>
-        <td><div class="actions">
-            <button class="btn btn-primary btn-sm" onclick='editRow(${JSON.stringify(n)})'>Modifier</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteRow(${n.code_niveau})">Supprimer</button>
-        </div></td>
-    </tr>`;
-}
-
-async function loadData() {
-    const {ok,data} = await apiCall('GET','/api/niveaux');
-    const tb = document.getElementById('tbody');
-    tb.innerHTML = ok && data.length ? data.map(row).join('') : `<tr><td colspan="5" class="empty"><div class="empty-icon">📚</div>${ok?'Aucun niveau':'Erreur de chargement'}</td></tr>`;
-}
-
-document.getElementById('createForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const fd = Object.fromEntries(new FormData(e.target));
-    const {ok,data} = await apiCall('POST','/api/niveaux',fd);
-    if(ok){ toast('Niveau créé'); closeModal('createModal'); e.target.reset(); loadData(); }
-    else toast(data.message||JSON.stringify(data.errors)||'Erreur','error');
-});
-
-function editRow(n) {
-    currentId = n.code_niveau;
+function openEdit(n) {
     document.getElementById('e_label').value   = n.label_niveau;
-    document.getElementById('e_desc').value    = n.desc_niveau||'';
+    document.getElementById('e_desc').value    = n.desc_niveau || '';
     document.getElementById('e_filiere').value = n.code_filiere;
+    document.getElementById('editForm').action = '/niveaux/' + n.code_niveau;
     openModal('editModal');
 }
-
-document.getElementById('editForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const fd = Object.fromEntries(new FormData(e.target));
-    const {ok,data} = await apiCall('PUT',`/api/niveaux/${currentId}`,fd);
-    if(ok){ toast('Niveau mis à jour'); closeModal('editModal'); loadData(); }
-    else toast(data.message||'Erreur','error');
-});
-
-async function deleteRow(id) {
-    if(!confirmDelete(`Supprimer le niveau #${id} ?`)) return;
-    const {ok,data} = await apiCall('DELETE',`/api/niveaux/${id}`);
-    if(ok){ toast('Niveau supprimé'); loadData(); }
-    else toast(data.message||'Erreur','error');
-}
-
-loadData();
 </script>
 @endpush
 @endsection

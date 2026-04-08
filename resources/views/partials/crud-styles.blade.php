@@ -61,4 +61,7 @@
     #toast.error   { background:#ef4444; }
     .actions { display:flex; gap:.4rem; }
     .text-muted { color:#94a3b8; font-size:.8rem; }
+    .alert { padding:.85rem 1rem; border-radius:8px; margin-bottom:1.25rem; font-size:.875rem; font-weight:500; }
+    .alert-success { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+    .alert-error   { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
 </style>

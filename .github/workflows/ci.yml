@@ -117,11 +117,12 @@ jobs:
         id: runner_ip
         run: echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
 
-      # Liste les fonctions SSH disponibles sur l'API cPanel o2switch
-      - name: List available SSH API functions
+      # Tente l'autorisation via le module FirewallManager
+      - name: Whitelist runner IP on o2switch
         run: |
-          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH" \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}")
+          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/FirewallManager/add_rule" \
+            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+            -d "ip=${{ steps.runner_ip.outputs.ip }}&port=22&action=allow")
           echo "Runner IP: ${{ steps.runner_ip.outputs.ip }}"
           echo "API Response: $RESPONSE"
 
@@ -151,11 +152,11 @@ jobs:
             php artisan queue:restart
             echo "Deployment complete."
 
-      # Nettoyage — suppression de l'IP après déploiement
+      # Supprime la règle firewall après déploiement
       - name: Remove runner IP from whitelist
         if: always()
         run: |
-          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/remove_authorized_ip" \
+          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/FirewallManager/remove_rule" \
             -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}")
+            -d "ip=${{ steps.runner_ip.outputs.ip }}&port=22")
           echo "API Response: $RESPONSE"

@@ -117,12 +117,14 @@ jobs:
         id: runner_ip
         run: echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
 
-      # Autorise l'IP du runner sur o2switch via l'API cPanel
+      # Autorise l'IP du runner sur o2switch via l'API cPanel + debug
       - name: Whitelist runner IP on o2switch
         run: |
-          curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/add_authorized_ip" \
+          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/add_authorized_ip" \
             -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}"
+            -d "ip=${{ steps.runner_ip.outputs.ip }}")
+          echo "Runner IP: ${{ steps.runner_ip.outputs.ip }}"
+          echo "API Response: $RESPONSE"
 
       # Déploiement SSH
       - name: Deploy via SSH

@@ -117,12 +117,11 @@ jobs:
         id: runner_ip
         run: echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
 
-      # Autorise l'IP du runner sur o2switch via l'API cPanel + debug
-      - name: Whitelist runner IP on o2switch
+      # Liste les fonctions SSH disponibles sur l'API cPanel o2switch
+      - name: List available SSH API functions
         run: |
-          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/add_authorized_ip" \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}")
+          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH" \
+            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}")
           echo "Runner IP: ${{ steps.runner_ip.outputs.ip }}"
           echo "API Response: $RESPONSE"
 
@@ -152,10 +151,11 @@ jobs:
             php artisan queue:restart
             echo "Deployment complete."
 
-      # Supprime l'IP du runner après déploiement
+      # Nettoyage — suppression de l'IP après déploiement
       - name: Remove runner IP from whitelist
         if: always()
         run: |
-          curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/remove_authorized_ip" \
+          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/SSH/remove_authorized_ip" \
             -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}"
+            -d "ip=${{ steps.runner_ip.outputs.ip }}")
+          echo "API Response: $RESPONSE"

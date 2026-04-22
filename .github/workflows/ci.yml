@@ -63,7 +63,7 @@ jobs:
       - name: Static code analysis
         run: ./vendor/bin/phpstan analyse app config database --memory-limit=2G
 
-      # 11. Scan qualité + vulnérabilités SonarCloud
+     # 11. Scan qualité + vulnérabilités SonarCloud
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
@@ -72,7 +72,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=NaelleNangmo_suivi-academic-backend
-            -Dsonar.organization=NaelleNangmo
+            -Dsonar.organization=naellenangmo
             -Dsonar.sources=app
             -Dsonar.tests=tests
             -Dsonar.sourceEncoding=UTF-8

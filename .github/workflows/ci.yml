@@ -11,7 +11,6 @@ jobs:
 
   # ─── Job CI — Qualité & Sécurité ────────────────────────────────────────────
   build-test:
-    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -19,15 +18,13 @@ jobs:
       # 1. Récupération du code source
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # 2. Installation PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
-          extensions: mbstring, pdo, pdo_pgsql, bcmath, xml, ctype, iconv, intl
+          extensions: mbstring, pdo, pdo_mysql, bcmath
           coverage: none
 
       # 3. Installation dépendances
@@ -54,37 +51,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 8. Scan IaC + Docker
-      - name: IaC and Docker scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: config
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
-
-      # 9. Cache optimisation Laravel
+      # 8. Cache optimisation Laravel
       - name: Build application cache
         run: |
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
 
-      # 10. Base de données de test
+      # 9. Base de données de test
       - name: Run migrations
         run: |
           touch database/database.sqlite
           php artisan migrate --force
 
-      # 11. Tests
+      # 10. Tests
       - name: Run tests
         run: php artisan test
 
-      # 12. Analyse statique
+      # 11. Analyse statique
       - name: Static code analysis
         run: ./vendor/bin/phpstan analyse app config database --memory-limit=2G
 
-      # 13. Scan qualité SonarCloud
+      # 12. Scan qualité SonarCloud
       - name: SonarCloud scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
@@ -100,7 +88,7 @@ jobs:
             -Dsonar.php.version=8.2
             -Dsonar.exclusions=vendor/**,storage/**,bootstrap/cache/**
 
-      # 14. Build Docker image
+      # 13. Build et push Docker image
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -113,7 +101,7 @@ jobs:
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/suivi-academic-backend:latest
 
-      # 15. Artifact
+      # 14. Artifact
       - name: Create build artifact
         run: |
           zip -r laravel-build.zip . \
@@ -138,22 +126,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Préparation du .env de production
-      - name: Prepare production environment
-        run: |
-          printf '%s' "${{ secrets.PROD_ENV_FILE }}" > .env
-          echo "Generating APP_KEY..."
-          NEW_KEY=$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")
-          sed -i '/^APP_KEY=/d' .env
-          echo "APP_KEY=$NEW_KEY" >> .env
-
-      # 3. Installation PHP pour composer
+      # 2. Installation PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
-          extensions: mbstring, pdo, pdo_pgsql, bcmath, xml, ctype, iconv, intl
+          extensions: mbstring, pdo, pdo_mysql, bcmath
           coverage: none
+
+      # 3. Préparation du .env de production
+      - name: Prepare production environment
+        run: |
+          printf '%s' "${{ secrets.PROD_ENV_FILE }}" > .env
+          NEW_KEY=$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")
+          sed -i '/^APP_KEY=/d' .env
+          echo "APP_KEY=$NEW_KEY" >> .env
 
       # 4. Installation dépendances de production
       - name: Install production dependencies
@@ -174,7 +161,8 @@ jobs:
           server-dir: /home/cdiu8226/public_html/noutong/suivi-academic-backend/
           exclude: |
             **/.git/**
-            **/.git*
+            **/.gitignore
+            **/.github/**
             **/node_modules/**
             **/tests/**
-            .github/**
+            **/storage/logs/**

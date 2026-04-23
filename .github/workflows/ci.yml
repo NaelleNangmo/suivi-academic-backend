@@ -104,7 +104,7 @@ jobs:
           name: laravel-build
           path: laravel-build.zip
 
-  # Job CD — déploiement continu vers o2switch via SSH
+  # Job CD — déploiement via webhook HTTP
   deploy:
     runs-on: ubuntu-latest
     needs: build-test
@@ -112,51 +112,14 @@ jobs:
 
     steps:
 
-      # Récupère l'IP publique du runner
-      - name: Get runner public IP
-        id: runner_ip
-        run: echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
-
-      # Tente l'autorisation via le module FirewallManager
-      - name: Whitelist runner IP on o2switch
+      - name: Trigger deployment webhook
         run: |
-          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/FirewallManager/add_rule" \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}&port=22&action=allow")
-          echo "Runner IP: ${{ steps.runner_ip.outputs.ip }}"
-          echo "API Response: $RESPONSE"
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.DEPLOY_URL }}?token=${{ secrets.DEPLOY_TOKEN }}")
 
-      # Déploiement SSH
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.O2SWITCH_HOST }}
-          username: ${{ secrets.O2SWITCH_USER }}
-          key: ${{ secrets.O2SWITCH_SSH_KEY }}
-          port: ${{ secrets.O2SWITCH_PORT }}
-          script: |
-            set -e
-            cd ${{ secrets.O2SWITCH_PATH }}
-            echo "Fetching latest code..."
-            git pull origin main
-            echo "Installing production dependencies..."
-            composer install --no-interaction --no-dev --optimize-autoloader
-            echo "Caching Laravel configuration..."
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            echo "Running database migrations..."
-            php artisan migrate --force
-            echo "Clearing application cache..."
-            php artisan cache:clear
-            php artisan queue:restart
-            echo "Deployment complete."
+          if [ "$response" != "200" ]; then
+            echo "Webhook failed with HTTP $response"
+            exit 1
+          fi
 
-      # Supprime la règle firewall après déploiement
-      - name: Remove runner IP from whitelist
-        if: always()
-        run: |
-          RESPONSE=$(curl -s "https://${{ secrets.CPANEL_HOST }}:2083/execute/FirewallManager/remove_rule" \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-            -d "ip=${{ steps.runner_ip.outputs.ip }}&port=22")
-          echo "API Response: $RESPONSE"
+          echo "Deployment webhook returned HTTP $response"

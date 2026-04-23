@@ -1,4 +1,4 @@
-name: Laravel CI Pipeline
+name: Laravel CI/CD Pipeline
 
 on:
   push:
@@ -8,7 +8,10 @@ on:
   pull_request:
 
 jobs:
+
+  # ─── Job CI — Qualité & Sécurité ────────────────────────────────────────────
   build-test:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -16,20 +19,23 @@ jobs:
       # 1. Récupération du code source
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. Installation PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
-          extensions: mbstring, pdo, pdo_mysql, bcmath
+          extensions: mbstring, pdo, pdo_pgsql, bcmath, xml, ctype, iconv, intl
+          coverage: none
 
       # 3. Installation dépendances
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
       # 4. Audit sécurité dépendances
-      - name: Security audit (Composer)
+      - name: Security audit
         run: composer audit
 
       # 5. Préparation environnement Laravel
@@ -38,33 +44,48 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # 6. Scan secrets
-      - name: Scan for secrets
-        uses: zricethezav/gitleaks-action@v2
+      # 6. Permissions storage
+      - name: Directory permissions
+        run: chmod -R 777 storage bootstrap/cache
 
-      # 7. Cache optimisation Laravel
-      - name: Build application
+      # 7. Scan secrets
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 8. Scan IaC + Docker
+      - name: IaC and Docker scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+      # 9. Cache optimisation Laravel
+      - name: Build application cache
         run: |
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
 
-      # 8. Base de données de test
+      # 10. Base de données de test
       - name: Run migrations
         run: |
           touch database/database.sqlite
           php artisan migrate --force
 
-      # 9. Tests
+      # 11. Tests
       - name: Run tests
         run: php artisan test
 
-      # 10. Analyse statique
+      # 12. Analyse statique
       - name: Static code analysis
         run: ./vendor/bin/phpstan analyse app config database --memory-limit=2G
 
-      # 11. Scan qualité + vulnérabilités SonarCloud
-      - name: SonarCloud Scan
+      # 13. Scan qualité SonarCloud
+      - name: SonarCloud scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,7 +100,7 @@ jobs:
             -Dsonar.php.version=8.2
             -Dsonar.exclusions=vendor/**,storage/**,bootstrap/cache/**
 
-      # 12. Build Docker image
+      # 14. Build Docker image
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -92,7 +113,7 @@ jobs:
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/suivi-academic-backend:latest
 
-      # 13. Artifact (backup optionnel)
+      # 15. Artifact
       - name: Create build artifact
         run: |
           zip -r laravel-build.zip . \
@@ -104,22 +125,56 @@ jobs:
           name: laravel-build
           path: laravel-build.zip
 
-  # Job CD — déploiement via webhook HTTP
+  # ─── Job CD — Déploiement o2switch via FTP ──────────────────────────────────
   deploy:
+    name: Deploy to o2switch
     runs-on: ubuntu-latest
     needs: build-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
 
-      - name: Trigger deployment webhook
+      # 1. Récupération du code source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Préparation du .env de production
+      - name: Prepare production environment
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.DEPLOY_URL }}?token=${{ secrets.DEPLOY_TOKEN }}")
+          printf '%s' "${{ secrets.PROD_ENV_FILE }}" > .env
+          echo "Generating APP_KEY..."
+          NEW_KEY=$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")
+          sed -i '/^APP_KEY=/d' .env
+          echo "APP_KEY=$NEW_KEY" >> .env
 
-          if [ "$response" != "200" ]; then
-            echo "Webhook failed with HTTP $response"
-            exit 1
-          fi
+      # 3. Installation PHP pour composer
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, pdo, pdo_pgsql, bcmath, xml, ctype, iconv, intl
+          coverage: none
 
-          echo "Deployment webhook returned HTTP $response"
+      # 4. Installation dépendances de production
+      - name: Install production dependencies
+        run: composer install --no-interaction --no-dev --optimize-autoloader
+
+      # 5. Création du flag de déploiement
+      - name: Create deploy flag
+        run: echo "deploy" > deploy.flag
+
+      # 6. Déploiement via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: /home/cdiu8226/public_html/noutong/suivi-academic-backend/
+          exclude: |
+            **/.git/**
+            **/.git*
+            **/node_modules/**
+            **/tests/**
+            .github/**

@@ -248,7 +248,7 @@
 {{-- Hero --}}
 <section class="hero">
     <div class="hero-content">
-        <span class="hero-badge">🎓 Système académique test</span>
+        <span class="hero-badge">🎓 Système académique </span>
         <h1>Gérez votre établissement<br>en toute simplicité</h1>
         <p>GestAcad centralise la gestion des filières, niveaux, unités d'enseignement, cours, personnel et programmations dans une seule plateforme.</p>
         <div class="hero-actions">

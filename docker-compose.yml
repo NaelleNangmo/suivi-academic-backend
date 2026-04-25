@@ -66,6 +66,8 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - alertmanager   #  Alertmanager est prêt
 
   # Grafana pour les dashboards
   grafana:
@@ -134,6 +136,10 @@ services:
     container_name: alertmanager
     ports:
       - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
     networks:
       - laravel
 

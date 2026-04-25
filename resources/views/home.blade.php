@@ -6,7 +6,7 @@
 <style>
     /* Hero */
     .hero {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        background: linear-gradient(135deg, green 0%, var(--accent) 100%);
         border-radius: var(--radius);
         padding: 4rem 3rem;
         color: white;
